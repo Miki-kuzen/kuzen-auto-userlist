@@ -1,0 +1,12 @@
+# 仮想環境
+.venv/
+__pycache__/
+
+# 認証・設定情報（絶対にアップロードしない）
+credentials.json
+config.py
+
+# ダウンロードされたデータ
+download/
+*.csv
+*.zip
