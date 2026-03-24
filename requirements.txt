@@ -1,5 +1,0 @@
-selenium
-webdriver-manager
-pyotp
-gspread
-oauth2client
