@@ -1,11 +1,20 @@
-import os
-import time
+# --- PyInstallerにライブラリを認識させるインポート ---
+import pyotp
+import gspread
+import oauth2client.service_account
+import selenium.webdriver.chrome.webdriver
+import webdriver_manager.chrome
+import google.auth
 import zipfile 
 import glob 
 import csv
-import pyotp
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+
+# 標準ライブラリ
+import time
+import os
+import sys
+import traceback
+import importlib.util
 
 # Selenium関連
 from selenium import webdriver
@@ -16,27 +25,59 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-# 自作モジュールのインポート
-import config
-from elements import LoginElements, DashboardElements
+from oauth2client.service_account import ServiceAccountCredentials
 
-def setup_driver():
+def load_external_module(module_name, file_name):
+    """外部ファイルを読み込む（キャッシュを削除して最新を反映）"""
+    if getattr(sys, 'frozen', False):
+        base_path = os.path.dirname(sys.executable)
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    
+    path = os.path.join(base_path, file_name)
+
+    # 既存のキャッシュがあれば削除して強制再読み込み
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None:
+        raise ImportError(f"Could not load {file_name} at {path}")
+        
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+# 実行ファイルパスを正確に取得する関数
+def get_base_path():
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+# --- 共通設定の読み込み ---
+config = load_external_module("config", "config.py")
+elements_mod = load_external_module("elements", "elements.py")
+LoginElements = elements_mod.LoginElements
+DashboardElements = elements_mod.DashboardElements
+
+def setup_driver(headless=True):
     """ブラウザの設定と起動（ドライバの自動管理を含む）"""
     abs_download_path = os.path.join(os.getcwd(), config.DOWNLOAD_DIR_NAME)
     if not os.path.exists(abs_download_path):
         os.makedirs(abs_download_path)
     
-    # フォルダ内の古いCSVファイルを削除（誤動作防止）
     for f in os.listdir(abs_download_path):
         if f.endswith(".zip") or f.endswith(".csv"):
             os.remove(os.path.join(abs_download_path, f))
 
     chrome_options = Options()
-    
-    # --- 画面を最大化する設定 ---
-    chrome_options.add_argument('--start-maximized') 
-    
-    # ダウンロード先を指定し、確認ダイアログを無効化
+    if headless:
+        chrome_options.add_argument('--headless') 
+        chrome_options.add_argument('--disable-gpu')
+    else:
+        chrome_options.add_argument('--start-maximized') 
+
     chrome_options.add_experimental_option("prefs", {
         "download.default_directory": abs_download_path,
         "download.prompt_for_download": False,
@@ -45,70 +86,65 @@ def setup_driver():
     
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    
-    # 念のため、起動直後にも最大化コマンドを送る（環境による不安定さを解消）
-    driver.maximize_window()
-    
     return driver, abs_download_path
 
-def upload_to_sheets(file_path):
+# 案件ごとの設定（p_config）を受け取る
+def upload_to_sheets(file_path, p_config):
     """CSVの内容をスプレッドシートにアップロードする"""
     try:
-        print(f"スプレッドシートへの書き込みを開始します: {file_path}")
+        print(f"スプレッドシート '{p_config.SHEET_NAME}' への書き込みを開始します")
         
-        # 認証設定
         scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         creds = ServiceAccountCredentials.from_json_keyfile_name(config.SERVICE_ACCOUNT_FILE, scope)
         client = gspread.authorize(creds)
         
-        # スプレッドシートとシートを開く
-        spreadsheet = client.open_by_key(config.SPREADSHEET_ID)
-        sheet = spreadsheet.worksheet(config.SHEET_NAME)
+        # 案件固有のIDとシート名を使用
+        spreadsheet = client.open_by_key(p_config.SPREADSHEET_ID)
+        sheet = spreadsheet.worksheet(p_config.SHEET_NAME)
         
-        # CSVファイルを読み込む（文字化けする場合は encoding='cp932' を試してください）
         with open(file_path, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             data = list(reader)
         
-        # シートの内容をすべて消去してから、CSVデータを書き込む
         sheet.clear()
-        sheet.update('A1', data)
-        print(f"スプレッドシート '{config.SHEET_NAME}' の更新が完了しました。")
+        # value_input_option='USER_ENTERED' は手入力操作　-> 日付の入力は日付に自動変換
+        sheet.update('A1', data, value_input_option='USER_ENTERED')
+        print(f"スプレッドシートの更新が完了しました。")
         
     except Exception as e:
         print(f"スプレッドシート更新中にエラーが発生しました: {e}")
 
-def main():
-    driver, download_path = setup_driver()
+# 案件1件分の処理を独立した関数
+def run_project(p_config):
+    """1つの案件を実行するメインロジック"""
+    print(f"\n{'='*60}")
+    print(f">>> 処理開始: {p_config.SERVICE_NAME}")
+    print(f">>> 備考: {getattr(p_config, 'COMMENT', 'なし')}")
+    print(f"{'='*60}")
+
+    driver, download_path = setup_driver(headless=True)
     wait = WebDriverWait(driver, 25) 
 
     try:
-        # 1. ログインフェーズ
-        driver.get(config.BASE_URL)
+        # 1. ログインフェーズ (p_config.BASE_URL を使用)
+        driver.get(p_config.BASE_URL)
         print("ログイン情報を入力中...")
         wait.until(EC.visibility_of_element_located((By.NAME, LoginElements.EMAIL_NAME))).send_keys(config.USER_EMAIL)
-
         driver.find_element(By.NAME, LoginElements.PASS_NAME).send_keys(config.USER_PASS)
         driver.find_element(By.XPATH, LoginElements.LOGIN_SUBMIT_XPATH).click()
 
         # 2. 多段階認証 (2FA) フェーズ
         print("2FA認証画面の表示を待機中...")
         otp_input = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, LoginElements.OTP_INPUT_CSS)))
-        
         totp = pyotp.TOTP(config.OTP_SECRET)
-        otp_code = totp.now()
-        otp_input.send_keys(otp_code)
-        
-        otp_submit_btn = wait.until(EC.element_to_be_clickable((By.XPATH, LoginElements.OTP_SUBMIT_XPATH)))
-        otp_submit_btn.click()
+        otp_input.send_keys(totp.now())
+        wait.until(EC.element_to_be_clickable((By.XPATH, LoginElements.OTP_SUBMIT_XPATH))).click()
 
-        # 3. 操作フェーズ（三点リーダー ➔ CSVダウンロード）
+        # 3. 操作フェーズ
         print("CSV作成リクエスト送信中...")
         wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, DashboardElements.THREE_DOTS_CSS))).click()
         wait.until(EC.element_to_be_clickable((By.XPATH, DashboardElements.CSV_DL_XPATH))).click()
-
-        final_dl_btn = wait.until(EC.element_to_be_clickable((By.XPATH, DashboardElements.FINAL_DOWNLOAD_SUBMIT_XPATH)))
-        final_dl_btn.click()
+        wait.until(EC.element_to_be_clickable((By.XPATH, DashboardElements.FINAL_DOWNLOAD_SUBMIT_XPATH))).click()
 
         # 4. 画面更新 ➔ タブ遷移
         time.sleep(1)
@@ -116,79 +152,93 @@ def main():
         time.sleep(3)
         wait.until(EC.element_to_be_clickable((By.XPATH, DashboardElements.TAB_CSV_RESULT_XPATH))).click()
 
-        # 5. ステータス「完了」待ち（ポーリング）
-        print("最新（1行目）のCSV生成完了を待機しています...")
-        max_retries = 20
-        
-        for i in range(max_retries):
+        # 5. ステータス待ち
+        print("CSV生成完了を待機中...")
+        for i in range(20):
             try:
-                # 1行目のステータス文字を取得
-                status_element = wait.until(EC.visibility_of_element_located((By.XPATH, DashboardElements.FIRST_ROW_STATUS_XPATH)))
-                current_status = status_element.text
-                
+                status_element = wait.until(EC.presence_of_element_located((By.XPATH, DashboardElements.FIRST_ROW_STATUS_XPATH)))
+                current_status = status_element.get_attribute("textContent")
                 if "完了" in current_status:
-                    print(f"最新のステータスが「{current_status}」になりました。")
+                    print(f"最新ステータス: {current_status}")
                     break
-                else:
-                    print(f"確認 {i+1}回目: ステータスは「{current_status}」です。生成を待っています...")
-            
-            except Exception as e:
-                print("待機中に要素を再検索します...")
-
+                print(f"確認 {i+1}回目: {current_status}...")
+            except:
+                pass
             time.sleep(6)
             driver.refresh()
-            # ページ更新後は必ずタブを再クリック
             wait.until(EC.element_to_be_clickable((By.XPATH, DashboardElements.TAB_CSV_RESULT_XPATH))).click()
-            
         else:
-            print("タイムアウト：CSVの生成が完了しませんでした。")
+            print("タイムアウト：CSV生成が完了しませんでした。")
             return
 
-        # 6. ファイルダウンロード実行
-        print("ファイルをダウンロードします...")
-        dl_btn = wait.until(EC.element_to_be_clickable((By.XPATH, DashboardElements.FIRST_ROW_DL_LINK_XPATH)))
-        dl_btn.click()
-
-        # ダウンロード完了（ファイル出現）を待機
+        # 6. ダウンロード実行
+        print("ファイルをダウンロード中...")
+        wait.until(EC.element_to_be_clickable((By.XPATH, DashboardElements.FIRST_ROW_DL_LINK_XPATH))).click()
         time.sleep(7) 
-        downloaded_files = os.listdir(download_path)
         
+        downloaded_files = os.listdir(download_path)
         if downloaded_files:
-            # フォルダ内の最初のファイルパスを取得
             downloaded_file_path = os.path.join(download_path, downloaded_files[0])
-            print(f"ダウンロード成功: {downloaded_file_path}")
-
-            # --- [追加] ZIP解凍ロジック ---
-            target_file_path = downloaded_file_path # デフォルトはそのまま
+            target_file_path = downloaded_file_path
 
             if downloaded_file_path.endswith('.zip'):
-                print("ZIPファイルを解凍中...")
+                print("ZIP解凍中...")
                 with zipfile.ZipFile(downloaded_file_path, 'r') as zip_ref:
-                    # ダウンロードフォルダ直下に解凍
                     zip_ref.extractall(download_path)
-                
-                # 解凍されたファイルの中からCSVを探す
                 extracted_csvs = glob.glob(os.path.join(download_path, "*.csv"))
-                if extracted_csvs:
-                    target_file_path = extracted_csvs[0]
-                    print(f"CSVを抽出しました: {target_file_path}")
-                else:
-                    print("エラー: ZIP内にCSVが見つかりませんでした。")
-                    return
+                if extracted_csvs: target_file_path = extracted_csvs[0]
 
-            # --- 7. Googleスプレッドシートへのアップロードを実行 ---
-            # 解凍されたCSV（または直接降ってきたCSV）のパスを渡す
-            upload_to_sheets(target_file_path)
-
+            # 7. スプレッドシートへのアップロード
+            upload_to_sheets(target_file_path, p_config)
+            print(f"完了URL: https://docs.google.com/spreadsheets/d/{p_config.SPREADSHEET_ID}")
         else:
-            print("エラー: ダウンロードフォルダにファイルが見つかりませんでした。")
+            print("エラー: ファイルが見つかりません。")
 
-    except Exception as e:
-        print(f"エラーが発生しました: {e}")
-    
+    except Exception:
+        print(f"案件 [{p_config.SERVICE_NAME}] でエラーが発生しました。")
+        traceback.print_exc()
     finally:
-        print("ブラウザを終了します。")
         driver.quit()
 
+def main():
+    base_path = get_base_path()
+    projects_dir = os.path.join(base_path, "projects")
+    
+    if not os.path.exists(projects_dir):
+        os.makedirs(projects_dir)
+        print("projects フォルダを作成しました。案件の .py ファイルを配置してください。")
+        return
+
+    # projects フォルダ内の .py ファイルをすべて取得
+    project_files = [f for f in os.listdir(projects_dir) 
+                     if f.endswith('.py') and not f.startswith('_')]
+    
+    if not project_files:
+        print("projects 内に実行可能な .py ファイルが見つかりません。")
+        return
+
+    print(f"合計 {len(project_files)} 件の案件を順次処理します。")
+
+    for file_name in project_files:
+        project_path = os.path.join(projects_dir, file_name)
+        try:
+            # ファイル名を識別子にして動的読み込み
+            # mod_案件A_py のような名前でキャッシュを管理
+            module_id = f"mod_{file_name.replace('.', '_')}"
+            p_config = load_external_module(module_id, project_path)
+            
+            run_project(p_config)
+            
+        except Exception:
+            print(f"\n[ERROR] ファイル '{file_name}' の処理中に致命的なエラーが発生しました。")
+            traceback.print_exc()
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        traceback.print_exc()
+    finally:
+        print("\n--- 全ての処理を終了しました ---")
+        input("閉じるには Enter キーを押してください...")
