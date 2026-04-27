@@ -15,6 +15,7 @@ import os
 import sys
 import traceback
 import importlib.util
+import winreg # レジストリ操作
 
 # Selenium関連
 from selenium import webdriver
@@ -24,7 +25,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-
+from webdriver_manager.core.driver_cache import DriverCacheManager
 from oauth2client.service_account import ServiceAccountCredentials
 
 def load_external_module(module_name, file_name):
@@ -61,31 +62,68 @@ elements_mod = load_external_module("elements", "elements.py")
 LoginElements = elements_mod.LoginElements
 DashboardElements = elements_mod.DashboardElements
 
+def get_chrome_version():
+    """WindowsレジストリからPython標準ライブラリのみでChromeバージョンを取得"""
+    try:
+        # HKEY_CURRENT_USER を確認
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Google\Chrome\BLBeacon")
+        version, _ = winreg.QueryValueEx(key, "version")
+        return version
+    except Exception:
+        try:
+            # 見つからなければ HKEY_LOCAL_MACHINE を確認
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Google Chrome")
+            version, _ = winreg.QueryValueEx(key, "displayversion")
+            return version
+        except:
+            return None
+
 def setup_driver(headless=True):
-    """ブラウザの設定と起動（ドライバの自動管理を含む）"""
-    abs_download_path = os.path.join(os.getcwd(), config.DOWNLOAD_DIR_NAME)
+    abs_download_path = os.path.join(get_base_path(), config.DOWNLOAD_DIR_NAME)
+    # フォルダ作成・削除処理
     if not os.path.exists(abs_download_path):
         os.makedirs(abs_download_path)
     
     for f in os.listdir(abs_download_path):
         if f.endswith(".zip") or f.endswith(".csv"):
-            os.remove(os.path.join(abs_download_path, f))
+            try: os.remove(os.path.join(abs_download_path, f))
+            except: pass
 
     chrome_options = Options()
     if headless:
-        chrome_options.add_argument('--headless') 
+        chrome_options.add_argument('--headless')
         chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
     else:
-        chrome_options.add_argument('--start-maximized') 
+        chrome_options.add_argument('--start-maximized')
 
     chrome_options.add_experimental_option("prefs", {
         "download.default_directory": abs_download_path,
         "download.prompt_for_download": False,
         "directory_upgrade": True
     })
-    
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+
+    #　ドライブ取得
+    try:
+        ver = get_chrome_version()
+        if ver:
+            #print(f"検出されたChromeバージョン: {ver}")
+            major_ver = ver.split('.')[0]
+            driver_path = ChromeDriverManager(driver_version=major_ver).install()
+        else:
+            #print("バージョンを自動検出できませんでした。最新取得を試みます。")
+            driver_path = ChromeDriverManager().install()
+            
+        service = Service(driver_path)
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+    except Exception as e:
+        print(f"起動エラー: {e}")
+        print("キャッシュを完全にクリアして再取得します...")
+        driver_path = ChromeDriverManager(cache_manager=DriverCacheManager()).install()
+        driver = webdriver.Chrome(service=Service(driver_path), options=chrome_options)
+
     return driver, abs_download_path
 
 # 案件ごとの設定（p_config）を受け取る

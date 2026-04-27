@@ -1,6 +1,7 @@
 # --- 秘匿情報 ---
 config.py
 credentials.json
+projects/
 
 # --- Python 一時ファイル ---
 __pycache__/

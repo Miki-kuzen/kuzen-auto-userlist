@@ -1,12 +1,3 @@
 @echo off
-chcp 65001 > nul
-echo アプリケーションを起動しています...
-
-rem exeファイルを実行
-main.exe
-
-echo.
-echo --------------------------------------------------
-echo プログラムが終了しました。
-echo (エラーで落ちた場合も、この画面で内容を確認できます)
+".\.venv\Scripts\python.exe" main.py
 pause
