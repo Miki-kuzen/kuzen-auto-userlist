@@ -50,9 +50,9 @@ if not exist %OUT%\runtime\pythonw.exe (
 
 echo Copying source files...
 copy /Y app.py    %OUT%\
-copy /Y config.py %OUT%\
-xcopy /E /I /Y /Q core %OUT%\core
-xcopy /E /I /Y /Q gui  %OUT%\gui
+xcopy /E /I /Y /Q config %OUT%\config
+xcopy /E /I /Y /Q core   %OUT%\core
+xcopy /E /I /Y /Q gui    %OUT%\gui
 
 echo Copying help projects credentials...
 if exist help        xcopy /E /I /Y /Q help        %OUT%\help
@@ -63,12 +63,12 @@ if not exist credentials (
     echo [NOTE] credentials\ not found. Create credentials\oauth_client.json before distributing.
 )
 
-if exist bundled_settings.json (
-    copy /Y bundled_settings.json %OUT%\
-    echo Copied bundled_settings.json
+rem bundled_settings.json は config\ 配下にある（config フォルダごとコピー済み）
+if exist config\bundled_settings.json (
+    echo Bundled config\bundled_settings.json included.
 ) else (
-    echo [NOTE] bundled_settings.json not found.
-    echo        Copy bundled_settings_template.json, rename it, and fill in the token.
+    echo [NOTE] config\bundled_settings.json not found.
+    echo        Copy config\bundled_settings_template.json, rename it, and fill in the token.
 )
 
 echo.

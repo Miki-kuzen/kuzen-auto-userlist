@@ -29,9 +29,9 @@ def load_settings() -> dict:
         except Exception:
             s = _defaults()
 
-    # bundled_settings.json が配布物ルートにあれば空のキーを補完する
+    # config/bundled_settings.json があれば空のキーを補完する
     # （管理者がトークン等を事前設定して配布するためのファイル。gitignore対象）
-    bundled_path = os.path.join(config.get_base_path(), "bundled_settings.json")
+    bundled_path = config.BUNDLED_SETTINGS_PATH
     if os.path.exists(bundled_path):
         try:
             with open(bundled_path, encoding="utf-8") as f:

@@ -265,32 +265,19 @@ class SettingsPage(tk.Frame):
                 text=f"❌ 接続失敗: {msg}", fg=C_DANGER))
 
     def _load_history(self):
-        import threading
-        repo  = self._github_repo_var.get().strip()
-        token = self._github_token_var.get().strip()
-        branch = self._github_branch_var.get().strip() or "main"
-        if not repo or not token:
-            self._set_hist_text("（リポジトリとトークンを設定すると更新履歴が表示されます）")
-            return
-        self._set_hist_text("読み込み中...")
-        threading.Thread(
-            target=self._do_load_history,
-            args=(repo, token, branch),
-            daemon=True,
-        ).start()
+        """更新履歴を changelog.json（同梱ファイル）から表示する。
 
-    def _do_load_history(self, repo: str, token: str, branch: str):
-        from core.updater import fetch_commit_history
+        リアルタイムで GitHub を参照せず、配布された changelog.json を読む。
+        各行は "yyyy/mm/dd  コメント" 形式。
+        """
         import config
-        commits = fetch_commit_history(repo, branch, token, limit=15)
-        if not commits:
-            self.after(0, lambda: self._set_hist_text(
-                "（履歴を取得できませんでした。接続設定を確認してください）"))
+        from core import changelog
+        lines = changelog.format_lines()
+        if not lines:
+            self._set_hist_text("（更新履歴はまだありません）")
             return
-        lines = [f"現在のバージョン: v{config.APP_VERSION}\n"]
-        for c in commits:
-            lines.append(f"  {c['date']}  [{c['sha']}]  {c['message']}")
-        self.after(0, lambda: self._set_hist_text("\n".join(lines)))
+        header = f"現在のバージョン: v{config.APP_VERSION}\n"
+        self._set_hist_text(header + "\n".join(lines))
 
     def _set_hist_text(self, text: str):
         self._hist_text.configure(state="normal")

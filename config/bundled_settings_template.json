@@ -1,0 +1,6 @@
+{
+  "_comment": "このファイルをコピーして config/bundled_settings.json にリネームし、値を記入してください。bundled_settings.json はgitignore対象です。",
+  "github_repo": "Miki-kuzen/kuzen-auto-userlist",
+  "github_token": "github_pat_REPLACE_WITH_REAL_TOKEN",
+  "github_branch": "main"
+}

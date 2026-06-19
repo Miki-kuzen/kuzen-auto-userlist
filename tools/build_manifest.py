@@ -76,10 +76,20 @@ def _collect_files() -> dict[str, str]:
 def main():
     parser = argparse.ArgumentParser(description="manifest.json を生成します。")
     parser.add_argument("--version", required=True, help="新しいバージョン番号（例: 2.0.1）")
+    parser.add_argument("--comment", default=None,
+                        help="更新内容（1行）。指定すると changelog.json に "
+                             "「本日の日付 + バージョン + コメント」を1件追記する。")
     parser.add_argument("--output",  default=None,
                         help="指定するとファイルをそのフォルダにもコピー（Google Drive方式）。"
                              "省略時はプロジェクトルートに manifest.json だけ生成（GitHub方式）。")
     args = parser.parse_args()
+
+    # --comment 指定時は changelog.json に追記（manifest 生成前に行い、ハッシュへ反映）
+    if args.comment:
+        sys.path.insert(0, APP_ROOT)
+        from core import changelog
+        entry = changelog.append_entry(args.version, args.comment)
+        print(f"changelog.json に追記: {entry['date']}  v{entry['version']}  {entry['comment']}")
 
     print(f"スキャン中: {APP_ROOT}")
     files_map = _collect_files()

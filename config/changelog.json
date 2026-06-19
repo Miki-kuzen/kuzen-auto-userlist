@@ -1,0 +1,44 @@
+{
+  "entries": [
+    {
+      "date": "2026/06/19",
+      "version": "",
+      "comment": "feat: v2（秘密非同梱版）一式と GitHub 自動アップデートを実装"
+    },
+    {
+      "date": "2026/06/19",
+      "version": "",
+      "comment": "feat(help): ヘルプを Notion 風 Markdown 表示に対応（リンク/装飾/引用/ネスト箇条書き/チェックボックス）"
+    },
+    {
+      "date": "2026/04/27",
+      "version": "",
+      "comment": "refactor: main.py とインストール/デバッグ用バッチを調整"
+    },
+    {
+      "date": "2026/04/02",
+      "version": "",
+      "comment": "feat: projects/ 配下の複数案件を順次処理する仕組みに刷新"
+    },
+    {
+      "date": "2026/03/25",
+      "version": "",
+      "comment": "chore: setup.bat のセットアップ処理を改善"
+    },
+    {
+      "date": "2026/03/25",
+      "version": "",
+      "comment": "chore: requirements.txt に依存ライブラリを追加"
+    },
+    {
+      "date": "2026/03/25",
+      "version": "",
+      "comment": "chore: セットアップ用バッチファイルを追加"
+    },
+    {
+      "date": "2026/03/25",
+      "version": "",
+      "comment": "chore: 初回コミット（Kuzen 自動ダウンローダー v1）"
+    }
+  ]
+}

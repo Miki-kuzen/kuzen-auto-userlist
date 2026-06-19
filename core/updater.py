@@ -25,7 +25,6 @@ import subprocess
 import sys
 import tempfile
 import tkinter as tk
-from datetime import datetime, timezone, timedelta
 from tkinter import messagebox
 from urllib import request as urllib_request
 from urllib.error import URLError, HTTPError
@@ -194,45 +193,3 @@ def check_and_update(root: tk.Tk):
         _update_exe(remote_ver, root)
     else:
         _update_source(repo, branch, token, manifest, remote_ver, root)
-
-
-# ------------------------------------------------------------------ #
-# コミット履歴取得
-# ------------------------------------------------------------------ #
-
-_JST = timezone(timedelta(hours=9))
-
-
-def _format_date(iso_str: str) -> str:
-    try:
-        dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
-        return dt.astimezone(_JST).strftime("%Y-%m-%d %H:%M")
-    except Exception:
-        return iso_str[:10]
-
-
-def fetch_commit_history(repo: str, branch: str, token: str,
-                         limit: int = 15) -> list[dict]:
-    """GitHub からコミット履歴を取得する。
-
-    Returns:
-        [{"sha": "abc1234", "date": "2026-06-19 21:00", "message": "..."}, ...]
-    """
-    try:
-        data = _github_api(
-            f"repos/{repo}/commits?sha={quote(branch)}&per_page={limit}", token
-        )
-        result = []
-        for item in data:
-            commit = item.get("commit", {})
-            date_str = commit.get("author", {}).get("date", "")
-            msg = commit.get("message", "").split("\n")[0]   # 1行目のみ
-            sha = item.get("sha", "")[:7]
-            result.append({
-                "sha": sha,
-                "date": _format_date(date_str),
-                "message": msg,
-            })
-        return result
-    except Exception:
-        return []
