@@ -1,0 +1,15 @@
+# 自動アップデートの整合性のため、manifest 対象ファイルの改行を LF に固定する。
+# （build_manifest.py の SHA256 とリモート blob のハッシュを一致させるため）
+*.py   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+
+# Windows バッチは CRLF
+*.bat  text eol=crlf
+
+# バイナリ（差分・改行変換しない）
+*.ico  binary
+*.png  binary
+*.zip  binary
+*.pyd  binary
+*.dll  binary
