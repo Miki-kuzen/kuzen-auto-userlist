@@ -35,7 +35,7 @@ Automation-Userlist/            ← このリポジトリ（git 管理対象）
 │   └─ updater.py               #   GitHub 自動アップデート
 ├─ gui/                         # tkinter GUI（ダッシュボード/案件管理/設定/ヘルプ）
 ├─ help/                        # アプリ内ヘルプ（*.md）
-├─ projects/                    # 案件定義（6桁IDなどのデータのみ）
+├─ projects/                    # 案件定義（6桁ID等）※git管理外・端末/配布ごとに管理
 ├─ tools/                       # 管理者用ビルドツール（配布物には含めない）
 │   ├─ build_manifest.py        #   manifest.json 生成
 │   ├─ launcher.py              #   ポータブル起動スタブ

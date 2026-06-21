@@ -20,7 +20,7 @@
     "gui/pages/dashboard_page.py": "ad8acef5b43b6a01c265df5dac93628c5fb97cdefbb32001ef9c18dbeb5329a5",
     "gui/pages/help_page.py": "88dd8d9a8584d801240223d25bf810bba134ea96d7dc545b0ce8a64793bbb82b",
     "gui/pages/projects_page.py": "1bbba597fb90ed6145823340e642f19c2d5cecb202e14c0a19f5530cff558d68",
-    "gui/pages/settings_page.py": "5d1d8cf55c6ed9d58b5adcf7c873a69d292468003c8af35a2b0d49e153c84b23",
+    "gui/pages/settings_page.py": "e41c474e25ee2a47c82b51d1d27e51079ec386c0b52bed7a826c29a948b0d2b6",
     "gui/pages/setup_page.py": "05a2300083fb0c04155a631602b1808cc1c0883bf1c6c0eb20d1e8b262d10dfb",
     "gui/pages/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "gui/widgets/toggle_switch.py": "0c00195bc47f0718a7b7559108c202fd6d5ee1b949be9efc0dbe85f9a4d78551",
@@ -29,14 +29,6 @@
     "help/02_案件の追加方法.md": "1387e3a5afb9d6d163ceda520ff4d0737a69eeddf224a1eacb49b997becc6568",
     "help/03_よくある質問.md": "6b3eb1c10c8e549a8dd82ffe0cbd1a2047526ec8e1feb15d899c1988ff318eba",
     "help/04_Slack通知の設定.md": "0129664421297b8d1df362c82ea91039d68546112cc6f78c7f77a6876d3de83a",
-    "help/05_アップデート管理.md": "35f6166cbecb859a04624793b97da8f90d6e083c48cbb1093a030f6c5bdea62b",
-    "projects/IDA.json": "f98d3472df794abec831650c6b7f2f02a64935af2064193e5b6e7e2942449523",
-    "projects/TAPP.json": "d733304248e13787bb32f96ef135a44af30ae1398f70c6dcc42602670105055a",
-    "projects/りらいぶ.json": "d28a18adaf60956f22982f30ea043ecf329968f10bb8385f96d0784d61a3a4f5",
-    "projects/テックポータル.json": "fb3f2839f37de45b245df7d9589792df736c3fe77099a1b2e5cf7408ad1248cf",
-    "projects/レバレジーズ保育.json": "224260be17c702bac255d974d2f3b99b5cf5cd51d5d8c2e9560edce083375226",
-    "projects/レバレジーズ医療技師.json": "49213250e1975f2068550e8c36e072f6cc643e0e1db0dd805759e94eb638a220",
-    "projects/レバレジーズ栄養士.json": "16ff16a5ff46f3c6dfef0dfe278f524924a25c4abb706f984ce308fedcf14241",
-    "projects/レバレジーズ薬剤師.json": "83e19bccadd06c5e0a054aaa8f3ad7cbf4660e83ab4ee7687e5ddf30b78aaa4c"
+    "help/05_アップデート管理.md": "35f6166cbecb859a04624793b97da8f90d6e083c48cbb1093a030f6c5bdea62b"
   }
 }

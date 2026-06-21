@@ -36,6 +36,7 @@ EXCLUDE_DIRS = {
     "dist", "dist_portable", "dist_launcher",
     "build", "build_launcher", "runtime",
     "credentials",          # 秘密: OAuth クライアント（配布物に手動同梱・リポジトリには入れない）
+    "projects",             # 案件定義: git 管理外（端末/配布ごとに管理・自動更新の対象外）
 }
 EXCLUDE_FILES = {
     "manifest.json",
