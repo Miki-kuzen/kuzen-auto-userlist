@@ -1,6 +1,6 @@
 """設定画面（Slack 連携・アップデート設定）。"""
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 
 from core import notifier
 from gui.theme import (
@@ -40,9 +40,28 @@ class SettingsPage(tk.Frame):
         hdr.pack(fill="x", padx=24, pady=(20, 0))
         tk.Label(hdr, text="設定", font=FONT_LARGE, bg=C_BG).pack(side="left")
 
-        # コンテンツ
-        scroll_outer = tk.Frame(self, bg=C_BG)
-        scroll_outer.pack(fill="both", expand=True, padx=24, pady=12)
+        # コンテンツ（スクロール可能：内容がウィンドウ高さを超えても全項目に到達できる）
+        outer = tk.Frame(self, bg=C_BG)
+        outer.pack(fill="both", expand=True, padx=24, pady=12)
+        canvas = tk.Canvas(outer, bg=C_BG, highlightthickness=0)
+        vsb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=vsb.set)
+        vsb.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        scroll_outer = tk.Frame(canvas, bg=C_BG)
+        _win = canvas.create_window((0, 0), window=scroll_outer, anchor="nw")
+        scroll_outer.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind(
+            "<Configure>",
+            lambda e: canvas.itemconfig(_win, width=e.width))
+        # マウスホイールはこのページにカーソルがある間だけ有効にする（他ページと競合しない）
+        def _on_wheel(e):
+            canvas.yview_scroll(int(-e.delta / 120), "units")
+        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_wheel))
+        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
 
         # ── Slack セクション ─────────────────────────────────────────
         self._section(scroll_outer, "Slack 通知")
