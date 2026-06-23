@@ -1,10 +1,10 @@
 {
-  "version": "2.0.1",
+  "version": "2.0.2",
   "files": {
     "app.py": "cb985bf2b1de45473e8c73f3314a725ecde3e046dfdce7300a0f5062d8eece6f",
     "README.md": "2340274cb48bbc8a8406734c75af75157a13a150bf8d28b2b2c3f4b8dff824d3",
-    "config/changelog.json": "035b7f9d79b8a850394b86a7110bb814732b2d28fe0c0aa89cedd24acd604c51",
-    "config/__init__.py": "437974ff1ea8118e4127be93fc9f6e98aa97559d5b7bf03541974591924f83dd",
+    "config/changelog.json": "d0bc5e3bc6d4e5450d8858377f202fda8615d5935ddda86e9749bab89147184b",
+    "config/__init__.py": "83442176564c150eacb96b5f5b00de76f572af7dc9c02f757e225273a2eb17b4",
     "core/auth_google.py": "d7dcf7340f785464f59bf86d558e93e6a750cc6e522f78024933b9eedf66408e",
     "core/auth_site.py": "0f2480541800f6b19ec8c3c069b0066790ae14cd0bf49f1a6bb875ff7bb01210",
     "core/changelog.py": "c92923a1cba7d62f7fc3e56c64ec0a183d57c6d2f98523999886b9983c0a164f",

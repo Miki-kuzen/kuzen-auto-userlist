@@ -1,6 +1,11 @@
 {
   "entries": [
     {
+      "date": "2026/06/23",
+      "version": "2.0.2",
+      "comment": "日付転写をUSER_ENTEREDに修正・Slack完了通知の不具合修正・設定画面の表示崩れ修正"
+    },
+    {
       "date": "2026/06/19",
       "version": "",
       "comment": "feat: v2（秘密非同梱版）一式と GitHub 自動アップデートを実装"
