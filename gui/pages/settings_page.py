@@ -313,6 +313,12 @@ class SettingsPage(tk.Frame):
         self.update_idletasks()
         ok = notifier.send("✅ [自動転写アプリ] テスト送信です。", webhook_url=url)
         if ok:
-            self._test_lbl.configure(text="✅ 送信しました！", fg=C_ON)
+            # テスト成功＝この Webhook を使う意思とみなし保存する。
+            # （完了通知は保存済み設定を読むため、保存しないと通知が来ない）
+            s = notifier.load_settings()
+            s["slack_webhook_url"] = url
+            notifier.save_settings(s)
+            self._webhook_var.set(url)
+            self._test_lbl.configure(text="✅ 送信しました！（Webhook を保存しました）", fg=C_ON)
         else:
             self._test_lbl.configure(text="❌ 送信失敗。URL を確認してください。", fg=C_DANGER)
